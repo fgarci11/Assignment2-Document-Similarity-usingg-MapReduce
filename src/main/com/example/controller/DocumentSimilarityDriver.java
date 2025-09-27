@@ -1,3 +1,5 @@
+package com.example;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -5,7 +7,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.filecache.DistributedCache; 
+//import org.apache.hadoop.filecache.DistributedCache; 
 
 import com.example.DocSizeMapper;
 import com.example.DocSizeReducer;
@@ -47,10 +49,11 @@ public class DocumentSimilarityDriver {
 
         // Pass the document sizes (Job 1) output to the distributed cache so it can be used by the JaccardReducer
         Path docSizePartFile = new Path(docSizesOutputPath, "part-r-00000"); 
-        DistributedCache.addCacheFile(docSizePartFile.toUri(), conf);
+        // DistributedCache.addCacheFile(docSizePartFile.toUri(), conf);
 
         // Job 2: Intersection (in-mapper) combiner + jaccard calculation        
         Job jaccardJob = Job.getInstance(conf, "jaccard similarity (network optimized)");
+        jaccardJob.addCacheFile(docSizePartFile.toUri());
         jaccardJob.setJarByClass(DocumentSimilarityDriver.class);
         // Mapper performs in-mapper combining (generates <word, docID> pairs and local sums)
         jaccardJob.setMapperClass(InMapperIntersectionMapper.class); 
