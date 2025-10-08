@@ -163,23 +163,23 @@ public class InMapperIntersectionMapper extends Mapper<Object, Text, Text, IntWr
 
             if (uniqueDocs.size() > 1) {
                 List<String> uniqueDocList = new ArrayList<>(uniqueDocs);
-            }
+            
+                // 3. Generate all unique document pairs for this word
+                for (int i = 0; i < uniqueDocList.size(); i++) {
+                    for (int j = i + 1; j < uniqueDocList.size(); j++) {
+                        String docA = uniqueDocList.get(i);
+                        String docB = uniqueDocList.get(j);
 
-            // 3. Generate all unique document pairs for this word
-            for (int i = 0; i < uniqueDocList.size(); i++) {
-                for (int j = i + 1; j < uniqueDocList.size(); j++) {
-                    String docA = uniqueDocList.get(i);
-                    String docB = uniqueDocList.get(j);
+                        // Ensure canonical order for the key: Doc1,Doc2
+                        String pairKey = (docA.compareTo(docB) < 0) ? docA + "," + docB : docB + "," + docA;
 
-                    // Ensure canonical order for the key: Doc1,Doc2
-                    String pairKey = (docA.compareTo(docB) < 0) ? docA + "," + docB : docB + "," + docA;
-
-                    // Output: <DocPair, 1>
-                    // The framework will automatically group and sum these locally,
-                    // or the JaccardReducer will sum them after the Shuffle.
-                    //////context.write(new Text(pairKey), ONE);
-                    //pairCounts.merge(pairKey, 1, Integer::sum);
-                    incrementPairCount(pairKey);
+                        // Output: <DocPair, 1>
+                        // The framework will automatically group and sum these locally,
+                        // or the JaccardReducer will sum them after the Shuffle.
+                        //////context.write(new Text(pairKey), ONE);
+                        //pairCounts.merge(pairKey, 1, Integer::sum);
+                        incrementPairCount(pairKey);
+                    }
                 }
             }
         }
