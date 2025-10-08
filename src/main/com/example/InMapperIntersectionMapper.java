@@ -112,7 +112,8 @@ public class InMapperIntersectionMapper extends Mapper<Object, Text, Text, IntWr
 
     // Store: <Word, List of DocIDs that contain it>
     // This accumulates the local inverted index during the map phase
-    private Map<String, List<String>> localInvertedIndex = new HashMap<>();
+    // private Map<String, List<String>> localInvertedIndex = new HashMap<>();
+    private Map<String, Set<String>> localInvertedIndex = new HashMap<>();
 
     // // We use IntWritable for the value to align with the final Reducer's summation
     // private final IntWritable ONE = new IntWritable(1);
@@ -135,7 +136,7 @@ public class InMapperIntersectionMapper extends Mapper<Object, Text, Text, IntWr
             String word = tokenizer.nextToken();
             if (word.length() > 0) {
                 // Build the local inverted index: Word -> [Doc1, Doc2, ...]
-                localInvertedIndex.computeIfAbsent(word, k -> new ArrayList<>()).add(docId);//can probably be done with Set
+                localInvertedIndex.computeIfAbsent(word, k -> new HashSet<>()).add(docId);//can probably be done with Set
             }
         }
     }
@@ -150,20 +151,19 @@ public class InMapperIntersectionMapper extends Mapper<Object, Text, Text, IntWr
     }
 
     // Aggregate to partial sums
-    private final Map<String, List<String>> wordToDocs = new HashMap<>();
+    //private final Map<String, List<String>> wordToDocs = new HashMap<>();
 
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         // --- This is the In-Mapper Combining/Reduction Step ---
 
         // 1. Iterate over every word collected locally
-        for (Map.Entry<String, List<String>> entry : localInvertedIndex.entrySet()) {
-            List<String> docList = entry.getValue();
+        for (Map.Entry<String, Set<String>> entry : localInvertedIndex.entrySet()) {
+            Set<String> uniqueDocs = entry.getValue();
 
-            // Remove duplicate docIDs in this word’s list (handle repeated words within a document)
-            Set<String> uniqueDocs = new HashSet<>(docList); //might be removeable if I can get Set working above
-            // Cast the Set of uniqueDocs to ArrayList for iterability
-            List<String> uniqueDocList = new ArrayList<>(uniqueDocs);//might be removeable if I can get Set working above
+            if (uniqueDocs.size() > 1) {
+                List<String> uniqueDocList = new ArrayList<>(uniqueDocs);
+            }
 
             // 3. Generate all unique document pairs for this word
             for (int i = 0; i < uniqueDocList.size(); i++) {
